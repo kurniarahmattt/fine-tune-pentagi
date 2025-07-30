@@ -1,0 +1,84 @@
+base_model: Qwen/Qwen3-8B
+model_type: AutoModelForCausalLM
+tokenizer_type: AutoTokenizer
+
+# Dataset configuration
+datasets:
+  - path: ./data/augmented_data.jsonl
+    type: chat_template
+    chat_template: "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{{ '<|im_start|>assistant\n' }}"
+    field: messages
+
+dataset_prepared_path: ./last_run_prepared
+val_set_size: 0.05
+output_dir: ./qwen3-finetuned
+
+# Training parameters
+sequence_len: 8192
+sample_packing: true
+pad_to_sequence_len: true
+
+# Enhanced QLoRA parameters for H100
+adapter: lora
+lora_r: 128
+lora_alpha: 256
+lora_dropout: 0.03
+lora_target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+
+# Optimized training hyperparameters
+learning_rate: 0.00015
+lr_scheduler: cosine
+num_epochs: 6
+micro_batch_size: 8
+gradient_accumulation_steps: 1
+eval_batch_size: 8
+warmup_steps: 50
+logging_steps: 10
+save_steps: 200
+eval_steps: 200
+
+# H100-specific optimizations
+bf16: true
+fp16: false
+tf32: true
+
+# Special tokens
+special_tokens:
+  pad_token: ""
+  bos_token: "<|im_start|>"
+  eos_token: "<|im_end|>"
+  unk_token: ""
+
+# Advanced training settings
+gradient_checkpointing: true
+early_stopping_patience: 3
+optimizer: adamw_torch
+weight_decay: 0.01
+max_grad_norm: 1.0
+
+# Distributed training configuration
+device_map: auto
+fsdp: 
+  - full_shard
+  - auto_wrap
+fsdp_config:
+  fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  fsdp_transformer_layer_cls_to_wrap: Qwen3DecoderLayer
+  fsdp_backward_prefetch: BACKWARD_PRE
+  fsdp_sharding_strategy: FULL_SHARD
+  fsdp_cpu_ram_efficient_loading: true
+  fsdp_sync_module_states: true
+  fsdp_offload_params: false
+  fsdp_state_dict_type: FULL_STATE_DICT
+
+# Performance optimizations
+rope_scaling:
+  type: dynamic
+  factor: 2.0
