@@ -1,0 +1,49 @@
+# Python cache and build files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info/
+
+# Virtual environments (will be created fresh in container)
+.venv/
+venv/
+env/
+
+# Git files
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs (will be created during training)
+logs/
+*.log
+
+# Models (will be created during training)
+models/
+qwen3-finetuned/
+
+# Cache (will be created during training)
+.cache/
+axolotl_cache/
+
+# Documentation (not needed in container)
+*.md
+DOCKER_*.md
+TRAINING_*.md
+DATA_*.md
+SECURITY_*.md
+
+# Temporary files
+*.tmp
+*.temp 

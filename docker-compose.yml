@@ -3,38 +3,22 @@ version: '3.8'
 services:
   axolotl-train-rahmat:
     build: .
-    # image: qwen3-axolotl:latest
-    image: axolotlai/axolotl:main-latest
     container_name: qwen3-finetune-rahmat
     runtime: nvidia
     environment:
-      - NVIDIA_VISIBLE_DEVICES=0,1,2,3
-      - HF_HOME=/raid/workspace/rahmat/.cache/huggingface
-      - WANDB_DIR=/raid/workspace/rahmat/logs
-      - TOKENIZERS_PARALLELISM=false
       - CUDA_VISIBLE_DEVICES=0,1,2,3
+      - HF_HOME=/workspace/.cache/huggingface
+      - WANDB_DIR=/workspace/logs
+      - TOKENIZERS_PARALLELISM=false
       - NCCL_DEBUG=INFO
       - NCCL_IB_DISABLE=0
       - NCCL_P2P_DISABLE=0
       - OMP_NUM_THREADS=8
     volumes:
-      # Mount the entire project directory
+      # Mount the entire project directory (this includes all subdirectories)
       - .:/workspace
-      # Mount raid directory for persistent storage
-      - /raid/workspace/rahmat:/raid/workspace/rahmat
-      # Mount cache directories
-      - /raid/workspace/rahmat/.cache:/root/.cache
-      - /raid/workspace/rahmat/.cache/huggingface:/workspace/.cache/huggingface
-      # Mount logs directory
-      - /raid/workspace/rahmat/logs:/workspace/logs
-      # Mount data directory
-      - /raid/workspace/rahmat/data:/workspace/data
-      # Mount model output directory
-      - /raid/workspace/rahmat/models:/workspace/qwen3-finetuned
-      # Mount axolotl cache
-      - /raid/workspace/rahmat/axolotl_cache:/workspace/axolotl_cache
-    working_dir: /raid/workspace/rahmat
-    command: bash training-pentest/scripts/train.sh
+    working_dir: /workspace
+    command: bash scripts/train.sh
     deploy:
       resources:
         reservations:

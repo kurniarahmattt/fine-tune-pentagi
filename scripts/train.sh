@@ -2,21 +2,18 @@
 
 set -e
 
-echo "🚀 Starting Qwen3:8B Security Fine-tuning on 4x H100 GPUs (Docker Environment)"
+echo "🚀 Starting Qwen3:8B Pentest Fine-tuning on 4x H100 GPUs (Docker Environment)"
 echo "📊 Hardware: 4x NVIDIA H100 80GB HBM3"
 echo "🎯 Dataset: Security-focused penetration testing data"
 echo "🔧 Framework: Axolotl with QLoRA"
-echo "💾 Storage: /raid/workspace/rahmat/"
+echo "💾 Storage: /workspace/ (project directory)"
 
-# Create necessary directories in raid
-mkdir -p /raid/workspace/rahmat/logs
-mkdir -p /raid/workspace/rahmat/data
-mkdir -p /raid/workspace/rahmat/models
-mkdir -p /raid/workspace/rahmat/.cache/huggingface
-mkdir -p /raid/workspace/rahmat/axolotl_cache
-
-# Create logs directory
+# Create necessary directories within project directory
 mkdir -p /workspace/logs
+mkdir -p /workspace/data
+mkdir -p /workspace/models
+mkdir -p /workspace/.cache/huggingface
+mkdir -p /workspace/axolotl_cache
 
 # Function to log messages
 log() {
@@ -94,10 +91,10 @@ export NCCL_P2P_DISABLE=0
 export OMP_NUM_THREADS=8
 export TOKENIZERS_PARALLELISM=false
 
-# Update config to use raid directories
-log "🔧 Updating configuration for raid storage..."
-sed -i 's|output_dir: ./qwen3-finetuned|output_dir: /raid/workspace/rahmat/models/qwen3-finetuned|g' config/qwen3_h100_4gpu_config.yml
-sed -i 's|logging_dir: ./logs|logging_dir: /raid/workspace/rahmat/logs|g' config/qwen3_h100_4gpu_config.yml
+# Update config to use project directories
+log "🔧 Updating configuration for project storage..."
+sed -i 's|output_dir: ./qwen3-finetuned|output_dir: ./models/qwen3-finetuned|g' config/qwen3_h100_4gpu_config.yml
+sed -i 's|logging_dir: ./logs|logging_dir: ./logs|g' config/qwen3_h100_4gpu_config.yml
 
 # Launch distributed training across 4 H100 GPUs
 log "🚀 Starting distributed training on 4x H100 GPUs..."
@@ -108,8 +105,8 @@ log "   - Batch Size: 32 (micro_batch_size=4, gradient_accumulation=8)"
 log "   - Sequence Length: 8192"
 log "   - Learning Rate: 0.0002"
 log "   - Epochs: 8"
-log "   - Output: /raid/workspace/rahmat/models/qwen3-finetuned"
-log "   - Logs: /raid/workspace/rahmat/logs"
+log "   - Output: ./models/qwen3-finetuned"
+log "   - Logs: ./logs"
 
 # Start training with comprehensive logging
 torchrun \
@@ -120,19 +117,19 @@ torchrun \
     2>&1 | tee -a /workspace/logs/training.log
 
 log "✅ Training completed successfully!"
-log "📁 Model saved to: /raid/workspace/rahmat/models/qwen3-finetuned"
-log "📊 Training logs saved to: /raid/workspace/rahmat/logs"
+log "📁 Model saved to: ./models/qwen3-finetuned"
+log "📊 Training logs saved to: ./logs"
 
 # Display final model information
-if [ -d "/raid/workspace/rahmat/models/qwen3-finetuned" ]; then
+if [ -d "./models/qwen3-finetuned" ]; then
     log "📋 Final Model Information:"
-    ls -la /raid/workspace/rahmat/models/qwen3-finetuned/
-    echo "Model size: $(du -sh /raid/workspace/rahmat/models/qwen3-finetuned/ | cut -f1)" | tee -a /workspace/logs/training.log
+    ls -la ./models/qwen3-finetuned/
+    echo "Model size: $(du -sh ./models/qwen3-finetuned/ | cut -f1)" | tee -a /workspace/logs/training.log
 fi
 
-# Copy logs to raid directory
-log "📋 Copying logs to raid directory..."
-cp -r /workspace/logs/* /raid/workspace/rahmat/logs/ 2>/dev/null || true
-
 log "🎉 Fine-tuning pipeline completed successfully!"
-log "💾 All data, logs, and models saved to /raid/workspace/rahmat/"
+log "💾 All data, logs, and models saved to project directory:"
+log "   - Models: ./models/"
+log "   - Logs: ./logs/"
+log "   - Cache: ./.cache/"
+log "   - Data: ./data/"
