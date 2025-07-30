@@ -69,19 +69,19 @@ datasets:
     field: messages
 
 dataset_prepared_path: ./last_run_prepared
-val_set_size: 0.05
-output_dir: ./qwen3-finetuned
+val_set_size: 0.1  # Increased to 10% for better validation
+output_dir: ./models/qwen3-finetuned
 
 # H100-optimized training parameters
 sequence_len: 8192
 sample_packing: true
 pad_to_sequence_len: true
 
-# Enhanced QLoRA parameters for 4x H100
+# Optimized QLoRA parameters for 4x H100
 adapter: lora
-lora_r: 256  # Increased for better capacity
-lora_alpha: 512  # Increased for better scaling
-lora_dropout: 0.05  # Slightly increased for regularization
+lora_r: 128  # Reduced for better generalization
+lora_alpha: 256  # Reduced proportionally
+lora_dropout: 0.1  # Increased for better regularization
 lora_target_modules:
   - q_proj
   - k_proj
@@ -91,17 +91,17 @@ lora_target_modules:
   - up_proj
   - down_proj
 
-# Optimized hyperparameters for 4x H100
-learning_rate: 0.0002  # Slightly increased for faster convergence
-lr_scheduler: cosine
-num_epochs: 8  # Increased for better learning
-micro_batch_size: 4  # Increased for 4x H100 (more memory per GPU)
-gradient_accumulation_steps: 8  # Effective batch size = 4 * 8 * 4 = 128
-eval_batch_size: 4
-warmup_steps: 100  # Increased for stability
-logging_steps: 5  # More frequent logging
-save_steps: 100  # More frequent saving
-eval_steps: 100  # More frequent evaluation
+# Optimized hyperparameters for 4,715 examples
+learning_rate: 0.0001  # Reduced for stability
+lr_scheduler: cosine_with_restarts  # Better for small datasets
+num_epochs: 12  # Increased for better learning
+micro_batch_size: 2  # Reduced for stability
+gradient_accumulation_steps: 16  # Effective batch size = 2 * 16 * 4 = 128
+eval_batch_size: 2
+warmup_ratio: 0.1  # 10% of total steps for warmup
+logging_steps: 10  # More frequent logging
+save_steps: 50  # More frequent saving
+eval_steps: 50  # More frequent evaluation
 
 # H100-specific optimizations
 bf16: true  # Use bfloat16 for H100
@@ -118,19 +118,18 @@ special_tokens:
   unk_token: ""
 
 # Advanced training settings
-early_stopping_patience: 5  # Increased patience
+early_stopping_patience: 3  # Reduced for faster convergence
 optimizer: adamw_torch
-weight_decay: 0.01
-max_grad_norm: 1.0
+weight_decay: 0.05  # Increased for regularization
+max_grad_norm: 0.5  # Reduced for stability
 dataloader_pin_memory: true
-dataloader_num_workers: 4  # Reduced for 4 GPUs
+dataloader_num_workers: 2  # Reduced for stability
 
 # Distributed training configuration for 4x H100
 device_map: auto
 fsdp: 
   - full_shard
   - auto_wrap
-  - cpu_offload
 fsdp_config:
   fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
   fsdp_transformer_layer_cls_to_wrap: Qwen3DecoderLayer
@@ -148,7 +147,7 @@ rope_scaling:
   factor: 2.0
 
 # Memory optimizations
-max_memory_MB: 75000  # Leave some buffer for system
+max_memory_MB: 70000  # Reduced for stability
 torch_compile: true  # Enable torch.compile for speed
 torch_compile_backend: inductor
 
@@ -159,7 +158,7 @@ wandb_watch: gradients
 logging_dir: ./logs
 
 # Model saving
-save_total_limit: 3  # Keep only 3 best checkpoints
+save_total_limit: 5  # Keep 5 best checkpoints
 save_strategy: steps
 evaluation_strategy: steps
 load_best_model_at_end: true
@@ -170,4 +169,9 @@ greater_is_better: false
 group_by_length: true  # Group similar length sequences for efficiency
 remove_unused_columns: true
 ignore_data_skip: false
-deepspeed: null  # Use FSDP instead of DeepSpeed for H100 
+deepspeed: null  # Use FSDP instead of DeepSpeed for H100
+
+# Additional optimizations
+dataloader_drop_last: true
+eval_delay: 0
+save_safetensors: true 
