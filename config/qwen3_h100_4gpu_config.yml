@@ -5,67 +5,11 @@ base_model: Qwen/Qwen3-8B
 model_type: AutoModelForCausalLM
 tokenizer_type: AutoTokenizer
 
-# Enhanced tokenizer with security domain tokens
-tokenizer_config:
-  path: ./tokenizer_security
-  additional_special_tokens:
-    - "IDOR"
-    - "XSS" 
-    - "SQLi"
-    - "RCE"
-    - "SSRF"
-    - "LFI"
-    - "RFI"
-    - "XXE"
-    - "CSRF"
-    - "SSTI"
-    - "NMAP"
-    - "BURP"
-    - "METASPLOIT"
-    - "SQLMAP"
-    - "WIRESHARK"
-    - "NESSUS"
-    - "GOBUSTER"
-    - "FFUF"
-    - "DIRB"
-    - "CVE-"
-    - "MSFVENOM"
-    - "EXPLOITDB"
-    - "SHODAN"
-    - "ZAP"
-    - "HYDRA"
-    - "JOHN"
-    - "HASHCAT"
-    - "PRIVESC"
-    - "PWN"
-    - "ROP"
-    - "SHELLCODE"
-    - "BUFFER"
-    - "OVERFLOW"
-    - "PAYLOAD"
-    - "REVSHELL"
-    - "BINDSHELL"
-    - "STAGED"
-    - "STAGELESS"
-    - "ADMIN:"
-    - "ROOT:"
-    - "FLAG{"
-    - "HTTP/"
-    - "HTTPS/"
-    - "200OK"
-    - "403FORBIDDEN"
-    - "401UNAUTHORIZED"
-    - "500ERROR"
-    - "BASE64"
-    - "MD5:"
-    - "SHA1:"
-    - "SHA256:"
-
 # Dataset configuration
 datasets:
   - path: ./data/augmented_training_data.jsonl
     type: chat_template
-    chat_template: "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{{ '<|im_start|>assistant\n' }}"
+    chat_template: "{% for message in messages %}{{'<' + '|im_start|' + '>' + message['role'] + '\n' + message['content'] + '<' + '|im_end|' + '>' + '\n'}}{% endfor %}{{ '<' + '|im_start|' + '>assistant\n' }}" # Escape | properly if needed by your YAML parser
     field: messages
 
 dataset_prepared_path: ./last_run_prepared
@@ -81,7 +25,7 @@ pad_to_sequence_len: true
 adapter: lora
 lora_r: 128  # Reduced for better generalization
 lora_alpha: 256  # Reduced proportionally
-lora_dropout: 0.1  # Increased for better regularization
+lora_dropout: 0.05  # Increased for better regularization
 lora_target_modules:
   - q_proj
   - k_proj
@@ -93,8 +37,10 @@ lora_target_modules:
 
 # Optimized hyperparameters for 4,715 examples
 learning_rate: 0.0001  # Reduced for stability
-lr_scheduler: cosine_with_restarts  # Better for small datasets
-num_epochs: 12  # Increased for better learning
+lr_scheduler: cosine # Simpler, or cosine_with_restarts with kwargs
+# lr_scheduler: cosine_with_restarts
+# lr_scheduler_kwargs: {"num_cycles": 2} # Uncomment if using cosine_with_restarts
+num_epochs: 8  # Increased for better learning
 micro_batch_size: 2  # Reduced for stability
 gradient_accumulation_steps: 16  # Effective batch size = 2 * 16 * 4 = 128
 eval_batch_size: 2
@@ -140,6 +86,7 @@ fsdp_config:
   fsdp_offload_params: false
   fsdp_state_dict_type: FULL_STATE_DICT
   fsdp_use_orig_params: true
+  fsdp_activation_checkpointing: true
 
 # Performance optimizations
 rope_scaling:
@@ -147,12 +94,12 @@ rope_scaling:
   factor: 2.0
 
 # Memory optimizations
-max_memory_MB: 70000  # Reduced for stability
-torch_compile: true  # Enable torch.compile for speed
-torch_compile_backend: inductor
+# max_memory_MB: 70000  # Likely unnecessary with FSDP, consider removing
+torch_compile: false  # Disable initially for stability, enable later if needed
+# torch_compile_backend: inductor # Only if torch_compile is true
 
 # Logging and monitoring
-wandb_project: "qwen3-security-finetuning"
+wandb_project: "qwen3-pentest-finetuning"
 wandb_entity: null  # Set your wandb entity if needed
 wandb_watch: gradients
 logging_dir: ./logs
@@ -174,4 +121,4 @@ deepspeed: null  # Use FSDP instead of DeepSpeed for H100
 # Additional optimizations
 dataloader_drop_last: true
 eval_delay: 0
-save_safetensors: true 
+save_safetensors: true
